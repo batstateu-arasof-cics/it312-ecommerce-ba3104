@@ -3,6 +3,8 @@
 @section('title', 'Sales report')
 
 @section('content')
+@include('dashboard::partials.admin-menu')
+
 <h1 class="text-2xl font-bold mb-6">Sales report</h1>
 
 {{-- date filter, sends ?from= and ?to= back to this page --}}

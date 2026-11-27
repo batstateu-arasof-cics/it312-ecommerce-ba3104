@@ -3,6 +3,8 @@
 @section('title', 'Admin dashboard')
 
 @section('content')
+@include('dashboard::partials.admin-menu')
+
 <h1 class="text-2xl font-bold mb-6">Admin dashboard</h1>
 
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -50,6 +52,4 @@
         @endforelse
     </section>
 </div>
-
-{{-- TODO (Dashboard team): links to admin pages of other teams (products, orders, inventory, vouchers, reviews) as they are merged --}}
 @endsection

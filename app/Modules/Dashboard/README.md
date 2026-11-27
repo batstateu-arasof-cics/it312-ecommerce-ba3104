@@ -25,9 +25,9 @@ The admin home page (`/admin`): sales figures, orders by status, top products, l
 > - [x] Low-stock panel (shows seeded low-stock products)
 
 **Your work: Must items (graded)**
-- [ ] 1. Orders by status and top 5 products by quantity sold on the dashboard
-- [ ] 2. Sales report page with a date range (`/admin/reports/sales`)
-- [ ] 3. CSV export of the report
+- [x] 1. Orders by status and top 5 products by quantity sold on the dashboard
+- [x] 2. Sales report page with a date range (`/admin/reports/sales`)
+- [x] 3. CSV export of the report
 - [ ] 4. Admin menu partial (`dashboard::partials.admin-menu`) other teams add their links to + feature tests (403 for customers, figures match orders)
 
 **Your work: Stretch items (bonus, after all Musts)**
@@ -37,7 +37,7 @@ The admin home page (`/admin`): sales figures, orders by status, top products, l
 ## Interface provided — `App\Contracts\ReportServiceInterface`
 | Method | Parameters | Returns | Status |
 | --- | --- | --- | --- |
-| `salesSummary` | `?string $from, ?string $to` (Y-m-d) | `array` (total_sales, order_count, …) | Partial |
+| `salesSummary` | `?string $from, ?string $to` (Y-m-d) | `array`: total_sales, order_count, orders_by_status (status => count, cancelled included), top_products (top 5 by quantity, cancelled left out) | Done |
 
 ## Events
 - Fires: none
@@ -58,12 +58,18 @@ None.
 | Method | URI | Controller@action | Middleware |
 | --- | --- | --- | --- |
 | GET | `/admin` | `DashboardController@index` | auth, admin |
+| GET | `/admin/reports/sales?from=Y-m-d&to=Y-m-d` | `DashboardController@report` | auth, admin |
+| GET | `/admin/reports/sales/export?from=Y-m-d&to=Y-m-d` | `DashboardController@export` (CSV) | auth, admin |
 
 ## Setup and testing
 - Manual test: log in as `admin@shop.test`, open `/admin`; place an order as the customer and refresh
+- Sales report: open `/admin/reports/sales`, pick From and To dates, click "Show report"
 - Automated tests:
 
 ## Changelog
 | Date | Change | PR # | Author |
 | --- | --- | --- | --- |
 | | Starter code from instructor | — | Instructor |
+| 2026-11-27 | Orders by status and top 5 products on `/admin` (Must 1) | | Aaron Justine Flores |
+| 2026-11-27 | Sales report page with date range `/admin/reports/sales` (Must 2) | | Aaron Justine Flores |
+| 2026-11-27 | CSV export of the sales report (Must 3) | | Aaron Justine Flores |

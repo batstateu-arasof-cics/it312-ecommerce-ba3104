@@ -29,7 +29,7 @@ Keeps `products.stock` correct: deducts on orders, restores on cancellation, rec
 - [x] 1. `restoreStock()`: add quantities back, record `cancel` movements, run only once per order
 - [x] 2. Fire `StockLow` when a sale takes a product to or below the threshold
 - [x] 3. Admin stock page (`/admin/inventory`): every product's stock with a restock form that records a `restock` movement
-- [ ] 4. Feature tests: order deducts, cancel restores once, restock adds, `StockLow` fires (`Event::fake()`)
+- [x] 4. Feature tests: order deducts, cancel restores once, restock adds, `StockLow` fires (`Event::fake()`)
 
 **Your work: Stretch items (bonus, after all Musts)**
 - [ ] Per-product stock history page
@@ -71,7 +71,11 @@ The low-stock threshold is a setting, not a column: `config('inventory.low_stock
 ## Setup and testing
 - Manual test: note a product's stock, place an order for 2, check the stock dropped by 2 and a `stock_movements` row exists
 - Admin stock page: log in as `admin@shop.test`, open `/admin/inventory`, add 10 to Sagada Coffee 500g (3 → 13)
-- Automated tests:
+- Automated tests: `php artisan test tests/Feature/Inventory`
+  - `RestoreStockTest`: cancel puts stock back, only once per order, every item restored (Must 1)
+  - `StockLowTest`: `StockLow` fires at or below the threshold, not above it (Must 2)
+  - `StockPageTest`: admin page, customers get 403, restock adds and is recorded, bad quantities rejected (Must 3)
+  - `InventoryFlowTest`: order deducts, then the full flow order → cancel → restock → low-stock alert through the real app (Must 4)
 
 ## Changelog
 | Date | Change | PR # | Author |
@@ -80,3 +84,4 @@ The low-stock threshold is a setting, not a column: `config('inventory.low_stock
 | 2026-11-27 | `restoreStock()`: restore once per order with `cancel` movements (Must 1) | | Aaron Justine Flores |
 | 2026-11-27 | Fire `StockLow` after a sale reaches the threshold (Must 2) | | Aaron Justine Flores |
 | 2026-11-27 | Admin stock page `/admin/inventory` with restock form (Must 3) | | Aaron Justine Flores |
+| 2026-11-27 | Full-flow feature tests in `tests/Feature/Inventory` (Must 4) | | Aaron Justine Flores |

@@ -3,6 +3,7 @@
 namespace App\Modules\Inventory\Services;
 
 use App\Contracts\InventoryServiceInterface;
+use App\Events\StockLow;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Orders\Models\Order;
@@ -31,11 +32,19 @@ class InventoryService implements InventoryServiceInterface
                     'change' => -$item->quantity,
                     'reason' => 'sale',
                 ]);
-
-                // TODO (Inventory team, Must 2): after the transaction, StockLow::dispatch($product) for every product
-                // whose stock is now <= config('inventory.low_stock_threshold')
             }
         });
+
+        // Must 2: after the sale is saved, alert for every product that is now low on stock
+        $threshold = config('inventory.low_stock_threshold');
+
+        foreach ($order->items as $item) {
+            $product = Product::find($item->product_id);
+
+            if ($product && $product->stock <= $threshold) {
+                StockLow::dispatch($product);
+            }
+        }
     }
 
     // Must 1: put the items of a cancelled order back into stock (only once per order)

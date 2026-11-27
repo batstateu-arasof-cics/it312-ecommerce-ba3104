@@ -27,7 +27,7 @@ Keeps `products.stock` correct: deducts on orders, restores on cancellation, rec
 
 **Your work: Must items (graded)**
 - [x] 1. `restoreStock()`: add quantities back, record `cancel` movements, run only once per order
-- [ ] 2. Fire `StockLow` when a sale takes a product to or below the threshold
+- [x] 2. Fire `StockLow` when a sale takes a product to or below the threshold
 - [ ] 3. Admin stock page (`/admin/inventory`): every product's stock with a restock form that records a `restock` movement
 - [ ] 4. Feature tests: order deducts, cancel restores once, restock adds, `StockLow` fires (`Event::fake()`)
 
@@ -43,7 +43,7 @@ Keeps `products.stock` correct: deducts on orders, restores on cancellation, rec
 | `lowStock` | — | `Collection` of `Product` | Done |
 
 ## Events
-- Fires: `StockLow` (Must 2)
+- Fires: `StockLow` after the sale's transaction is saved, once per product whose stock is now at or below the threshold
 - Listens to: `OrderPlaced` → `DeductStockOnOrder`, `OrderCancelled` → `RestoreStockOnCancel`
 
 ## Dependencies used
@@ -74,3 +74,4 @@ None yet.
 | --- | --- | --- | --- |
 | | Starter code from instructor | — | Instructor |
 | 2026-11-27 | `restoreStock()`: restore once per order with `cancel` movements (Must 1) | | Aaron Justine Flores |
+| 2026-11-27 | Fire `StockLow` after a sale reaches the threshold (Must 2) | | Aaron Justine Flores |

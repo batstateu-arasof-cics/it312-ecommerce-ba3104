@@ -5,27 +5,20 @@ namespace App\Modules\Dashboard\Services;
 use App\Contracts\ReportServiceInterface;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderItem;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
-/**
- * Dashboard team (Group 8): all sales figures for the admin dashboard and reports.
- * Reads orders only (never writes). Dates are 'Y-m-d' strings; null means no limit on that side.
- */
+// Dashboard team (Group 8): sales figures for the admin dashboard and reports.
+// Dates are 'Y-m-d' strings, null means no limit on that side.
 class ReportService implements ReportServiceInterface
 {
-    /**
-     * Totals for a date range: total_sales and order_count (cancelled orders left out),
-     * plus orders_by_status and top_products (Dashboard Must 1).
-     */
     public function salesSummary(?string $from = null, ?string $to = null): array
     {
-        // Orders in the date range that still count as sales.
-        $orders = $this->ordersBetween($from, $to)->where('status', '!=', Order::CANCELLED);
+        $orders = Order::where('status', '!=', Order::CANCELLED)
+            ->when($from, fn ($q) => $q->whereDate('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('created_at', '<=', $to));
 
-        // TODO (Dashboard team, Stretch): average_order_value and comparison with the previous period
+        // TODO (Dashboard team, Stretch): average_order_value
 
-        // clone: each figure gets its own copy of the query so they don't affect each other.
         return [
             'total_sales' => (float) (clone $orders)->sum('total'),
             'order_count' => (clone $orders)->count(),
@@ -34,60 +27,51 @@ class ReportService implements ReportServiceInterface
         ];
     }
 
-    /** Number of orders in each status (cancelled included), every status listed even when 0. */
+    // Must 1: how many orders are in each status, e.g. ['pending' => 2, 'paid' => 1, ...]
     public function ordersByStatus(?string $from = null, ?string $to = null): array
     {
-        // One database query: count orders per status, e.g. ['pending' => 2, 'paid' => 1].
-        $counts = $this->ordersBetween($from, $to)
-            ->selectRaw('status, COUNT(*) as aggregate')
-            ->groupBy('status')
-            ->pluck('aggregate', 'status');
+        $counts = [];
 
-        // Go through every known status so ones with no orders still show as 0.
-        $result = [];
         foreach (Order::STATUSES as $status) {
-            $result[$status] = (int) ($counts[$status] ?? 0);
+            $counts[$status] = Order::where('status', $status)
+                ->when($from, fn ($q) => $q->whereDate('created_at', '>=', $from))
+                ->when($to, fn ($q) => $q->whereDate('created_at', '<=', $to))
+                ->count();
         }
 
-        return $result;
+        return $counts;
     }
 
-    /** Best sellers by quantity sold, cancelled orders left out. */
+    // Must 1: the best selling products by quantity (cancelled orders don't count)
     public function topProducts(?string $from = null, ?string $to = null, int $limit = 5): Collection
     {
-        return OrderItem::query()
-            // Only items from orders in the range that were not cancelled.
-            ->whereHas('order', function (Builder $q) use ($from, $to) {
-                $q->where('status', '!=', Order::CANCELLED);
-                $this->applyDateRange($q, $from, $to);
-            })
-            // Add up quantity and money per product, best seller first (ties sorted by name).
-            ->selectRaw('product_id, product_name, SUM(quantity) as quantity_sold, SUM(quantity * unit_price) as revenue')
-            ->groupBy('product_id', 'product_name')
-            ->orderByDesc('quantity_sold')
-            ->orderBy('product_name')
-            ->limit($limit)
-            ->get()
-            // Turn each row into a simple array for the views.
-            ->map(fn ($row) => [
-                'product_id' => $row->product_id,
-                'name' => $row->product_name,
-                'quantity_sold' => (int) $row->quantity_sold,
-                'revenue' => (float) $row->revenue,
-            ]);
-    }
+        // get every item from the orders that are not cancelled
+        $items = OrderItem::whereHas('order', function ($q) use ($from, $to) {
+            $q->where('status', '!=', Order::CANCELLED)
+                ->when($from, fn ($q) => $q->whereDate('created_at', '>=', $from))
+                ->when($to, fn ($q) => $q->whereDate('created_at', '<=', $to));
+        })->get();
 
-    /** All orders created between $from and $to (any status). */
-    private function ordersBetween(?string $from, ?string $to): Builder
-    {
-        return $this->applyDateRange(Order::query(), $from, $to);
-    }
+        // add up the quantity and money of each product
+        $products = [];
 
-    /** Adds "created on or after $from" and "on or before $to" to a query; skips a side that is null. */
-    private function applyDateRange(Builder $query, ?string $from, ?string $to): Builder
-    {
-        return $query
-            ->when($from, fn ($q) => $q->whereDate('created_at', '>=', $from))
-            ->when($to, fn ($q) => $q->whereDate('created_at', '<=', $to));
+        foreach ($items as $item) {
+            $id = $item->product_id;
+
+            if (! isset($products[$id])) {
+                $products[$id] = [
+                    'product_id' => $id,
+                    'name' => $item->product_name,
+                    'quantity_sold' => 0,
+                    'revenue' => 0.0,
+                ];
+            }
+
+            $products[$id]['quantity_sold'] += $item->quantity;
+            $products[$id]['revenue'] += $item->quantity * $item->unit_price;
+        }
+
+        // best seller first, then keep only the top 5
+        return collect($products)->sortByDesc('quantity_sold')->take($limit)->values();
     }
 }

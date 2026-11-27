@@ -17,7 +17,7 @@
     {{-- TODO (Dashboard team, Stretch): average order value --}}
 </div>
 
-{{-- Orders by status (Dashboard Must 1): one box per status, from ReportService::ordersByStatus() --}}
+{{-- Must 1: one box for each order status --}}
 <section class="bg-white rounded shadow p-4 mb-6">
     <h2 class="font-semibold mb-3">Orders by status</h2>
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -39,7 +39,8 @@
             <p class="text-sm text-gray-500">No low-stock products.</p>
         @endforelse
     </section>
-    {{-- Top 5 products by quantity sold (Dashboard Must 1), from ReportService::topProducts() --}}
+
+    {{-- Must 1: top 5 products by quantity sold --}}
     <section class="bg-white rounded shadow p-4">
         <h2 class="font-semibold mb-2">Top products</h2>
         @forelse ($summary['top_products'] as $i => $product)

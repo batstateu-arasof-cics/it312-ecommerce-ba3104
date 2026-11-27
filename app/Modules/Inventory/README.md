@@ -26,10 +26,10 @@ Keeps `products.stock` correct: deducts on orders, restores on cancellation, rec
 > - [x] Low-stock threshold in `config/inventory.php` (`LOW_STOCK_THRESHOLD`, default 5) and `lowStock()`
 
 **Your work: Must items (graded)**
-- [ ] 1. `restoreStock()`: add quantities back, record `cancel` movements, run only once per order
-- [ ] 2. Fire `StockLow` when a sale takes a product to or below the threshold
-- [ ] 3. Admin stock page (`/admin/inventory`): every product's stock with a restock form that records a `restock` movement
-- [ ] 4. Feature tests: order deducts, cancel restores once, restock adds, `StockLow` fires (`Event::fake()`)
+- [x] 1. `restoreStock()`: add quantities back, record `cancel` movements, run only once per order
+- [x] 2. Fire `StockLow` when a sale takes a product to or below the threshold
+- [x] 3. Admin stock page (`/admin/inventory`): every product's stock with a restock form that records a `restock` movement
+- [x] 4. Feature tests: order deducts, cancel restores once, restock adds, `StockLow` fires (`Event::fake()`)
 
 **Your work: Stretch items (bonus, after all Musts)**
 - [ ] Per-product stock history page
@@ -39,11 +39,11 @@ Keeps `products.stock` correct: deducts on orders, restores on cancellation, rec
 | Method | Parameters | Returns | Status |
 | --- | --- | --- | --- |
 | `deductStock` | `Order $order` | `void` | Done |
-| `restoreStock` | `Order $order` | `void` | **Must 1** |
+| `restoreStock` | `Order $order` | `void` | Done (runs once per order) |
 | `lowStock` | — | `Collection` of `Product` | Done |
 
 ## Events
-- Fires: `StockLow` (Must 2)
+- Fires: `StockLow` after the sale's transaction is saved, once per product whose stock is now at or below the threshold
 - Listens to: `OrderPlaced` → `DeductStockOnOrder`, `OrderCancelled` → `RestoreStockOnCancel`
 
 ## Dependencies used
@@ -51,6 +51,9 @@ Keeps `products.stock` correct: deducts on orders, restores on cancellation, rec
 | --- | --- | --- |
 | Catalog team | `Product` | Stock column |
 | Orders team | `Order`, order events | What to deduct or restore |
+
+> [!NOTE]
+> Stock is restored when the Orders team fires `OrderCancelled` (their Must 2). Until that is merged, cancelling in the app does not restore stock yet; our tests fire the event directly.
 
 ## Database
 | Table | Columns | Migration file |
@@ -60,13 +63,25 @@ Keeps `products.stock` correct: deducts on orders, restores on cancellation, rec
 The low-stock threshold is a setting, not a column: `config('inventory.low_stock_threshold')`, set by `LOW_STOCK_THRESHOLD` in `.env`.
 
 ## Routes
-None yet.
+| Method | URI | Controller@action | Middleware |
+| --- | --- | --- | --- |
+| GET | `/admin/inventory` | `InventoryController@index` | auth, admin |
+| POST | `/admin/inventory/{product}/restock` | `InventoryController@restock` | auth, admin |
 
 ## Setup and testing
 - Manual test: note a product's stock, place an order for 2, check the stock dropped by 2 and a `stock_movements` row exists
-- Automated tests:
+- Admin stock page: log in as `admin@shop.test`, open `/admin/inventory`, add 10 to Sagada Coffee 500g (3 → 13)
+- Automated tests: `php artisan test tests/Feature/Inventory`
+  - `RestoreStockTest`: cancel puts stock back, only once per order, every item restored (Must 1)
+  - `StockLowTest`: `StockLow` fires at or below the threshold, not above it (Must 2)
+  - `StockPageTest`: admin page, customers get 403, restock adds and is recorded, bad quantities rejected (Must 3)
+  - `InventoryFlowTest`: order deducts, then the full flow order → cancel → restock → low-stock alert through the real app (Must 4)
 
 ## Changelog
 | Date | Change | PR # | Author |
 | --- | --- | --- | --- |
 | | Starter code from instructor | — | Instructor |
+| 2026-11-27 | `restoreStock()`: restore once per order with `cancel` movements (Must 1) | | Aaron Justine Flores |
+| 2026-11-27 | Fire `StockLow` after a sale reaches the threshold (Must 2) | | Aaron Justine Flores |
+| 2026-11-27 | Admin stock page `/admin/inventory` with restock form (Must 3) | | Aaron Justine Flores |
+| 2026-11-27 | Full-flow feature tests in `tests/Feature/Inventory` (Must 4) | | Aaron Justine Flores |

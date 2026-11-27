@@ -38,9 +38,35 @@ class InventoryService implements InventoryServiceInterface
 
     public function restoreStock(Order $order): void
     {
-        // TODO (Inventory team, Must 1): add each item's quantity back and record a 'cancel' movement.
-        // Run it only once per order. Hint: if StockMovement::where('order_id', $order->id)
-        //     ->where('reason', 'cancel')->exists(), the order was already restored - do nothing.
+        DB::transaction(function () use ($order) {
+            // Lock the order row so two cancellations at the same time cannot both restore.
+            Order::whereKey($order->id)->lockForUpdate()->first();
+
+            $alreadyRestored = StockMovement::where('order_id', $order->id)
+                ->where('reason', 'cancel')
+                ->exists();
+
+            if ($alreadyRestored) {
+                return;
+            }
+
+            foreach ($order->items as $item) {
+                $product = Product::lockForUpdate()->find($item->product_id);
+
+                if (! $product) {
+                    continue;
+                }
+
+                $product->increment('stock', $item->quantity);
+
+                StockMovement::create([
+                    'product_id' => $product->id,
+                    'order_id' => $order->id,
+                    'change' => $item->quantity,
+                    'reason' => 'cancel',
+                ]);
+            }
+        });
     }
 
     public function lowStock(): Collection

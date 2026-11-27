@@ -26,7 +26,7 @@ Keeps `products.stock` correct: deducts on orders, restores on cancellation, rec
 > - [x] Low-stock threshold in `config/inventory.php` (`LOW_STOCK_THRESHOLD`, default 5) and `lowStock()`
 
 **Your work: Must items (graded)**
-- [ ] 1. `restoreStock()`: add quantities back, record `cancel` movements, run only once per order
+- [x] 1. `restoreStock()`: add quantities back, record `cancel` movements, run only once per order
 - [ ] 2. Fire `StockLow` when a sale takes a product to or below the threshold
 - [ ] 3. Admin stock page (`/admin/inventory`): every product's stock with a restock form that records a `restock` movement
 - [ ] 4. Feature tests: order deducts, cancel restores once, restock adds, `StockLow` fires (`Event::fake()`)
@@ -39,7 +39,7 @@ Keeps `products.stock` correct: deducts on orders, restores on cancellation, rec
 | Method | Parameters | Returns | Status |
 | --- | --- | --- | --- |
 | `deductStock` | `Order $order` | `void` | Done |
-| `restoreStock` | `Order $order` | `void` | **Must 1** |
+| `restoreStock` | `Order $order` | `void` | Done (runs once per order) |
 | `lowStock` | — | `Collection` of `Product` | Done |
 
 ## Events
@@ -51,6 +51,9 @@ Keeps `products.stock` correct: deducts on orders, restores on cancellation, rec
 | --- | --- | --- |
 | Catalog team | `Product` | Stock column |
 | Orders team | `Order`, order events | What to deduct or restore |
+
+> [!NOTE]
+> Stock is restored when the Orders team fires `OrderCancelled` (their Must 2). Until that is merged, cancelling in the app does not restore stock yet; our tests fire the event directly.
 
 ## Database
 | Table | Columns | Migration file |
@@ -70,3 +73,4 @@ None yet.
 | Date | Change | PR # | Author |
 | --- | --- | --- | --- |
 | | Starter code from instructor | — | Instructor |
+| 2026-11-27 | `restoreStock()`: restore once per order with `cancel` movements (Must 1) | | Aaron Justine Flores |

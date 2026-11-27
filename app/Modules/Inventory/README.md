@@ -28,7 +28,7 @@ Keeps `products.stock` correct: deducts on orders, restores on cancellation, rec
 **Your work: Must items (graded)**
 - [x] 1. `restoreStock()`: add quantities back, record `cancel` movements, run only once per order
 - [x] 2. Fire `StockLow` when a sale takes a product to or below the threshold
-- [ ] 3. Admin stock page (`/admin/inventory`): every product's stock with a restock form that records a `restock` movement
+- [x] 3. Admin stock page (`/admin/inventory`): every product's stock with a restock form that records a `restock` movement
 - [ ] 4. Feature tests: order deducts, cancel restores once, restock adds, `StockLow` fires (`Event::fake()`)
 
 **Your work: Stretch items (bonus, after all Musts)**
@@ -63,10 +63,14 @@ Keeps `products.stock` correct: deducts on orders, restores on cancellation, rec
 The low-stock threshold is a setting, not a column: `config('inventory.low_stock_threshold')`, set by `LOW_STOCK_THRESHOLD` in `.env`.
 
 ## Routes
-None yet.
+| Method | URI | Controller@action | Middleware |
+| --- | --- | --- | --- |
+| GET | `/admin/inventory` | `InventoryController@index` | auth, admin |
+| POST | `/admin/inventory/{product}/restock` | `InventoryController@restock` | auth, admin |
 
 ## Setup and testing
 - Manual test: note a product's stock, place an order for 2, check the stock dropped by 2 and a `stock_movements` row exists
+- Admin stock page: log in as `admin@shop.test`, open `/admin/inventory`, add 10 to Sagada Coffee 500g (3 → 13)
 - Automated tests:
 
 ## Changelog
@@ -75,3 +79,4 @@ None yet.
 | | Starter code from instructor | — | Instructor |
 | 2026-11-27 | `restoreStock()`: restore once per order with `cancel` movements (Must 1) | | Aaron Justine Flores |
 | 2026-11-27 | Fire `StockLow` after a sale reaches the threshold (Must 2) | | Aaron Justine Flores |
+| 2026-11-27 | Admin stock page `/admin/inventory` with restock form (Must 3) | | Aaron Justine Flores |

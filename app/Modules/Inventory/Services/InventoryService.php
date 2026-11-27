@@ -89,4 +89,19 @@ class InventoryService implements InventoryServiceInterface
             ->orderBy('stock')
             ->get();
     }
+
+    // Must 3: the admin adds stock to a product, saved as a 'restock' movement with the admin's id
+    public function restock(Product $product, int $quantity, int $userId): void
+    {
+        DB::transaction(function () use ($product, $quantity, $userId) {
+            $product->increment('stock', $quantity);
+
+            StockMovement::create([
+                'product_id' => $product->id,
+                'user_id' => $userId,
+                'change' => $quantity,
+                'reason' => 'restock',
+            ]);
+        });
+    }
 }

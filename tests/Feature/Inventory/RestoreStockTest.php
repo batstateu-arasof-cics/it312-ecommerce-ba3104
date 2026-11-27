@@ -43,6 +43,7 @@ class RestoreStockTest extends TestCase
         return $order;
     }
 
+    /** Ordering 3 drops stock 25 → 22; cancelling brings it back to 25 and records a 'cancel' movement. */
     public function test_cancelling_an_order_puts_the_stock_back(): void
     {
         $product = Product::where('stock', 25)->first();
@@ -58,6 +59,7 @@ class RestoreStockTest extends TestCase
         ]);
     }
 
+    /** The cancel event arriving twice must not give the stock back twice. */
     public function test_cancelling_twice_restores_only_once(): void
     {
         $product = Product::where('stock', 25)->first();
@@ -70,6 +72,7 @@ class RestoreStockTest extends TestCase
         $this->assertSame(1, StockMovement::where('order_id', $order->id)->where('reason', 'cancel')->count());
     }
 
+    /** An order with two different products restores both of them. */
     public function test_every_item_in_the_order_is_restored(): void
     {
         [$first, $second] = Product::where('stock', 25)->take(2)->get();

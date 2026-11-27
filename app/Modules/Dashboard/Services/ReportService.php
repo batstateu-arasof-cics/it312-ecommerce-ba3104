@@ -74,4 +74,34 @@ class ReportService implements ReportServiceInterface
         // best seller first, then keep only the top 5
         return collect($products)->sortByDesc('quantity_sold')->take($limit)->values();
     }
+
+    // Must 2: sales for each day in the range (cancelled orders don't count), oldest day first
+    public function dailySales(?string $from = null, ?string $to = null): Collection
+    {
+        $orders = Order::where('status', '!=', Order::CANCELLED)
+            ->when($from, fn ($q) => $q->whereDate('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('created_at', '<=', $to))
+            ->orderBy('created_at')
+            ->get();
+
+        // group the orders by date and add up the count and the money
+        $days = [];
+
+        foreach ($orders as $order) {
+            $date = $order->created_at->format('Y-m-d');
+
+            if (! isset($days[$date])) {
+                $days[$date] = [
+                    'date' => $date,
+                    'order_count' => 0,
+                    'total_sales' => 0.0,
+                ];
+            }
+
+            $days[$date]['order_count']++;
+            $days[$date]['total_sales'] += $order->total;
+        }
+
+        return collect($days)->values();
+    }
 }

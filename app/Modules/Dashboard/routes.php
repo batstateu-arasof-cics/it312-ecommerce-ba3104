@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/reports/sales', [DashboardController::class, 'report'])->name('reports.sales');
 
     // TODO (Dashboard team):
-    // Route::get('/reports/sales', [DashboardController::class, 'report'])->name('reports.sales');
     // Route::get('/reports/sales/export', [DashboardController::class, 'export'])->name('reports.export');
 });

@@ -62,6 +62,7 @@ class DashboardFiguresTest extends TestCase
         $this->order(Order::CANCELLED, '2026-03-05', [[$tablea, 10]]);           // not counted in sales
     }
 
+    /** Totals leave out the cancelled order; every status is counted, including cancelled. */
     public function test_dashboard_figures_match_the_orders(): void
     {
         $this->seedOrders();
@@ -79,6 +80,7 @@ class DashboardFiguresTest extends TestCase
             ->assertSee('₱1,460.00');
     }
 
+    /** Ranking by quantity: Barako 4, Tablea 2, Arabica 1 (Tablea's cancelled 10 is ignored). */
     public function test_top_products_are_ranked_by_quantity_sold_without_cancelled_orders(): void
     {
         $this->seedOrders();
@@ -98,6 +100,7 @@ class DashboardFiguresTest extends TestCase
             ->assertSeeInOrder(['Top products', '1. Kapeng Barako 250g', '2. Tablea Chocolate 200g']);
     }
 
+    /** Seven products sold, but only the top 5 are listed. */
     public function test_top_products_shows_at_most_five(): void
     {
         foreach (Product::take(7)->get() as $product) {
@@ -108,6 +111,7 @@ class DashboardFiguresTest extends TestCase
             ->assertViewHas('summary', fn (array $summary) => $summary['top_products']->count() === 5);
     }
 
+    /** With no orders, all 5 statuses show 0 and the top products box says "No sales yet." */
     public function test_empty_shop_shows_zero_for_every_status(): void
     {
         $this->actingAs($this->admin())->get(route('admin.dashboard'))

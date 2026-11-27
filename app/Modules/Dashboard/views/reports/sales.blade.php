@@ -16,6 +16,9 @@
         <input type="date" name="to" value="{{ $to }}" class="rounded border px-2 py-1">
     </label>
     <button class="rounded bg-gray-900 text-white px-4 py-1.5 text-sm">Show report</button>
+    {{-- download the same dates as a CSV file --}}
+    <a href="{{ route('admin.reports.export', ['from' => $from, 'to' => $to]) }}"
+       class="rounded border px-4 py-1.5 text-sm hover:bg-gray-100">Download CSV</a>
     @if ($from || $to)
         <a href="{{ route('admin.reports.sales') }}" class="text-sm text-gray-500 hover:underline">Clear dates</a>
     @endif

@@ -9,6 +9,8 @@ use App\Modules\Orders\Models\Order;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
+// Inventory team (Group 8): the only class that changes products.stock.
+// Every change is also saved in stock_movements so we have a history.
 class InventoryService implements InventoryServiceInterface
 {
     public function deductStock(Order $order): void
@@ -36,11 +38,39 @@ class InventoryService implements InventoryServiceInterface
         });
     }
 
+    // Must 1: put the items of a cancelled order back into stock (only once per order)
     public function restoreStock(Order $order): void
     {
-        // TODO (Inventory team, Must 1): add each item's quantity back and record a 'cancel' movement.
-        // Run it only once per order. Hint: if StockMovement::where('order_id', $order->id)
-        //     ->where('reason', 'cancel')->exists(), the order was already restored - do nothing.
+        // if this order already has a 'cancel' movement, the stock was already restored
+        $alreadyRestored = StockMovement::where('order_id', $order->id)
+            ->where('reason', 'cancel')
+            ->exists();
+
+        if ($alreadyRestored) {
+            return;
+        }
+
+        // save all the changes together, so it's all or nothing
+        DB::transaction(function () use ($order) {
+            foreach ($order->items as $item) {
+                $product = Product::find($item->product_id);
+
+                // skip the item if the product was deleted
+                if (! $product) {
+                    continue;
+                }
+
+                // add the quantity back and record it in the history
+                $product->increment('stock', $item->quantity);
+
+                StockMovement::create([
+                    'product_id' => $product->id,
+                    'order_id' => $order->id,
+                    'change' => $item->quantity,
+                    'reason' => 'cancel',
+                ]);
+            }
+        });
     }
 
     public function lowStock(): Collection
